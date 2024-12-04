@@ -1,0 +1,15 @@
+[
+    { 
+      "id": "email", 
+      "title": "Email Rephrase", 
+      "systemPrompt": "We are going to have a roleplay. ...", 
+      "conversationHistory": [] 
+    },
+    { 
+      "id": "thesis", 
+      "title": "Thesis Brainstorm", 
+      "systemPrompt": "You are a thesis brainstorming assistant. Constrain the output to max_token = 1024.", 
+      "conversationHistory": [] 
+    }
+  ]
+  

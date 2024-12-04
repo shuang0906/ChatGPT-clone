@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChatGPT Clone</title>
-    <link rel="stylesheet" type="text/css" href="style.css" />
-  </head>
-  <body>
-    <h1>ChatGPT Clone</h1>
-    <div id="chat-container"></div>
-    <div class="input-container">
-      <textarea
-        id="user-input"
-        placeholder="Type your message..."
-        onkeydown="if(event.keyCode === 13 && !event.shiftKey) { sendMessage(); event.preventDefault(); }"
-      ></textarea>
-      <button onclick="sendMessage()">Send</button>
-    </div>
-    <script src="chat.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatGPT Clone</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+  <div class="header-container">
+    <div class="avatar">
+      <img src="/images/assistant-avatar.png" alt="Chatbot Avatar">
+      <div class="status-circle"></div>
+    </div>    
+    <h1>GPT-Fail</h1>
+    <div id="tabs-container" class="tabs"></div>
+  </div>
+  <div id="chat-container" class="chat-container"></div>
+  <div class="input-container">
+    <textarea
+      id="user-input"
+      placeholder="Type your message..."
+      onkeydown="if(event.keyCode === 13 && !event.shiftKey) { sendMessage(); event.preventDefault(); }"
+    ></textarea>
+    <button onclick="sendMessage()">Send</button>
+  </div>
+  <script src="chat.js"></script>
+</body>
 </html>
+
+
