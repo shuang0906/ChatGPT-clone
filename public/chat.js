@@ -1,37 +1,89 @@
 let tabs = [];
 
+let inactivityTimer; 
+
 const tabFeatures = {
-  email: {
+  fail: {
     shouldExit: (currentTab) => {
       const chance = Math.random();
-      if (chance < 0.9) { // 30% chance of exiting
-        const message = "Chatbot has left the conversation.";
-        appendMessage("Chatbot", message);
+      if (chance < 0.3) { 
+        const chatContainer = document.getElementById('chat-container');
+        const message = "GPT-Fail has left the conversation.";
+        const systemMessage = document.createElement('div');
+        systemMessage.className = "system-message";
+        systemMessage.textContent = message;
+        setTimeout( () => {
+          chatContainer.appendChild(systemMessage);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+          currentTab.conversationHistory.push({
+            role: "system",
+            content: message,
+          });
+        }, 500
+        )
+
         currentTab.hasExited = true; // Flag to mark the chatbot as exited
+        updateStatusCircle("fail");
         return true;
       }
       return false;
     },
+    typingDelay: 20,
   },
-  thesis: {
+  chatter: {
     handleAutoMessage: async (currentTab) => {
       setTimeout(async () => {
         const autoMessage = "GOGO";
-
         // Add the auto-message to the backend conversation history only
         currentTab.conversationHistory.push({ role: "user", content: autoMessage });
         await sendMessage(false); // Ensure this is backend-only and does not alter UI
         console.log("GOGO sent");
-      }, 1000); // 1-second delay after typing effect completes
+      }, 1000); 
     },
   },
+  stall: {
+    handleAutoMessage: async (currentTab) => {
+      // Check for inactivity and send message if no new message for 10 seconds
+      if (!inactivityTimer) {
+        inactivityTimer = setTimeout(async () => {
+          const autoMessage = "UUPP";
+          // Add the auto-message to the backend conversation history only
+          currentTab.conversationHistory.push({ role: "user", content: autoMessage });
+          await sendMessage(false); // Ensure this is backend-only and does not alter UI
+          console.log("UUPP sent due to inactivity.");
+        }, 20000); 
+      }
+    }
+  },
+  about: {
+    handleAutoMessage: async (currentTab) => {
+      if (!inactivityTimer) {
+        inactivityTimer = setTimeout(async () => {
+          const response = await fetch('/assets/breaking-things-at-work.csv');
+          const csvText = await response.text();
+          // Parse CSV (Assume each line is a potential message)
+          const lines = csvText.split('\n');
+          const randomLine = lines[Math.floor(Math.random() * lines.length)].trim();
+          const message = "Generate one paragraph of discussion on a point about the relationship between Artificial Intelligence, Capitalism, and Labor based on the following information, provide background knowledge if needed:";
+          
+          if (randomLine) {
+            // Add the random message from the CSV to the conversation history
+            currentTab.conversationHistory.push({ role: "user", content: message + randomLine });
+            await sendMessage(false); // Ensure this is backend-only and does not alter UI
+            console.log("Random line from CSV sent:", message + randomLine);
+          }
+        }, 20000); // 10-second delay
+      }
+    }
+  }
 };
+
 
 
 // Load tabs from a JSON file
 async function loadTabs() {
   try {
-    const response = await fetch('test.json'); // Replace with the correct file path if necessary
+    const response = await fetch('tabs.json'); // Replace with the correct file path if necessary
     tabs = await response.json();
     initializeTabs(); 
   } catch (error) {
@@ -73,18 +125,35 @@ function generateTabsDropdown() {
 function switchTab(tabId) {
   activeTab = tabId;
 
-  const chatContainer = document.getElementById('chat-container');
-  chatContainer.innerHTML = ''; // Clear current chat messages
+  const chatContainer = document.getElementById("chat-container");
+  chatContainer.innerHTML = ""; // Clear current chat messages
 
   const currentTab = tabs.find(tab => tab.id === activeTab);
 
   // Iterate through conversationHistory and append messages with correct styles
   currentTab.conversationHistory.forEach(entry => {
-    const role = entry.role === 'user' ? 'You' : 'Chatbot';
-    appendMessage(role, entry.content);
+    const role = entry.role === "user" ? "You" :
+                 entry.role === "assistant" ? "Chatbot" :
+                 "System";
+    appendMessage(role, entry.content, role === "system");
   });
+  // Check if the current tab has exited and update status circle color
+  if (currentTab.hasExited) {
+    updateStatusCircle("fail"); // Set to red if the fail tab is active
+  } else {
+    updateStatusCircle("normal"); // Reset color for other tabs
+  }
 }
 
+// Function to update the #status-circle color
+function updateStatusCircle(status) {
+  const statusCircle = document.getElementById('status-circle');
+  if (status === "fail") {
+    statusCircle.style.backgroundColor = "red"; // Red color when fail
+  } else {
+    statusCircle.style.backgroundColor = ""; // Reset to original color
+  }
+}
 
 // Call loadTabs() on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -95,13 +164,14 @@ document.addEventListener('DOMContentLoaded', () => {
 function appendMessage(who, message, isTyping = false) {
   const chatContainer = document.getElementById('chat-container');
   const messageDiv = document.createElement('div');
+
   messageDiv.className = `message ${who.toLowerCase()}`;
 
   // Avatar
   const avatarDiv = document.createElement('div');
   avatarDiv.className = 'avatar';
   const avatarImage = document.createElement('img');
-  avatarImage.src = who === 'You' ? '/images/user-avatar.jpg' : '/images/assistant-avatar.png';
+  avatarImage.src = who === 'You' ? '/assets/images/user-avatar.jpg' : '/assets/images/assistant-avatar.png';
   avatarImage.alt = `${who} Avatar`;
   avatarDiv.appendChild(avatarImage);
 
@@ -128,6 +198,7 @@ function appendMessage(who, message, isTyping = false) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 
   return bubbleDiv; // Return the bubble for updating content
+  
 }
 
 // Typing effect function
@@ -167,6 +238,15 @@ async function sendMessage(fromUserInput = true) {
     currentTab.conversationHistory.push({ role: "user", content: message });
   }
 
+  if (currentTab?.hasExited) {
+    console.log("Chatbot has exited. Message sending is disabled.");
+    return; 
+  }
+
+    // Reset inactivity timer when a new message is sent
+    clearTimeout(inactivityTimer); // Clear the previous inactivity timer
+    inactivityTimer = null; // Reset inactivity timer
+
   // Append a loading animation
   const waitingMessage = appendMessage("Chatbot", "", true);
 
@@ -181,12 +261,16 @@ async function sendMessage(fromUserInput = true) {
     });
     const data = await response.json();
 
+    // Get tab-specific typing delay
+    const tabFeature = tabFeatures[activeTab];
+    const typingDelay = tabFeature?.typingDelay || 5; // Default to 5 if not specified
+
     // Replace the loading animation with the typing effect
     waitingMessage.innerHTML = ""; // Clear loader
-    startTypingEffect(waitingMessage, data.reply, 20, () => {
+    startTypingEffect(waitingMessage, data.reply, typingDelay, () => {
       currentTab.conversationHistory.push({ role: "assistant", content: data.reply });
 
-      // Dynamically handle features for the current tab
+      // Handle specific features for the current tab
       handleTabFeatures(activeTab, currentTab);
     });
   } catch (error) {
@@ -196,8 +280,6 @@ async function sendMessage(fromUserInput = true) {
     waitingMessage.innerHTML = "Error: Unable to get a response.";
   }
 }
-
-
 
 
 function handleTabFeatures(tabId, currentTab) {

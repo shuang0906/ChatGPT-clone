@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ChatGPT Clone</title>
+  <title>GPT-Fail</title>
   <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
+  <main>
   <div class="header-container">
     <div class="avatar">
-      <img src="/images/assistant-avatar.png" alt="Chatbot Avatar">
-      <div class="status-circle"></div>
+      <img src="/assets/images/assistant-avatar.png" alt="Chatbot Avatar">
+      <div id="status-circle"></div>
     </div>    
     <h1>GPT-Fail</h1>
     <div id="tabs-container" class="tabs"></div>
@@ -25,6 +26,7 @@
     <button onclick="sendMessage()">Send</button>
   </div>
   <script src="chat.js"></script>
+</main>
 </body>
 </html>
 
